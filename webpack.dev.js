@@ -7,6 +7,9 @@ module.exports = mergeWithRules({
 })(common, {
 	mode: 'development',
 	devtool: 'inline-source-map',
+	entry: {
+		app: './src/app/index.ts'
+	},
 	devServer: {
 		static: './dist',
 		compress: true
@@ -14,7 +17,7 @@ module.exports = mergeWithRules({
 	plugins: [
 		new HtmlWebpackPlugin({
 			title: 'Development',
-			template: 'src/index.html'
+			template: 'src/app/index.html'
 		})
 	]
 });

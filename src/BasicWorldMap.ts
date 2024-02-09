@@ -1,25 +1,21 @@
 import {
-	FeatureGroup,
 	Map as LeafletMap,
 	featureGroup,
 	geoJSON,
 	map,
 	tooltip
 } from 'leaflet';
-import leafletCss from 'leaflet/dist/leaflet.css';
-import { LitElement, PropertyValueMap, css, html, unsafeCSS } from 'lit';
+import { LitElement, PropertyValueMap, css, html } from 'lit';
 import { property } from 'lit/decorators/property.js';
-import geodata from './geodata.json';
 
 export class BasicWorldMap extends LitElement {
-	countryFeatures!: Map<string, any>;
+	readonly countryFeatures!: Map<string, any>;
 	private geoJson!: ReturnType<typeof geoJSON>;
 	leafletMap!: LeafletMap;
 	private mapEl = document.createElement('div');
 
 	static styles = [
 		css`
-			${unsafeCSS(leafletCss.toString())}
 			:host {
 				display: block;
 				height: 500px;
@@ -35,6 +31,10 @@ export class BasicWorldMap extends LitElement {
 
 			.leaflet-attribution-flag {
 				display: none !important;
+			}
+
+			.leaflet-interactive:focus {
+				outline-style: none;
 			}
 
 			.sr-only {
@@ -68,8 +68,19 @@ export class BasicWorldMap extends LitElement {
 			// dragging: false,
 			zoomSnap: 0.5
 		}).addEventListener('resize', this.onResize.bind(this));
+	}
 
-		// geojson
+	setCss(sheet: CSSStyleSheet) {
+		if (this.shadowRoot) {
+			this.shadowRoot.adoptedStyleSheets.unshift(sheet);
+		}
+	}
+	setGeoJson(geodata?: any) {
+		if (this.geoJson) {
+			this.geoJson.clearAllEventListeners().remove();
+		}
+
+		const tt = tooltip();
 		this.geoJson = geoJSON(geodata as any, {
 			onEachFeature: (feature, layer) => {
 				const {
@@ -88,7 +99,79 @@ export class BasicWorldMap extends LitElement {
 					className: 'map-countries'
 				};
 			}
-		}).addTo(this.leafletMap);
+		})
+			.on({
+				click: e => {
+					this.dispatchEvent(
+						new CustomEvent('mouseover-country', {
+							bubbles: true,
+							composed: true,
+							detail: e.propagatedFrom
+						})
+					);
+					this.dispatchEvent(
+						new CustomEvent('click-country', {
+							bubbles: true,
+							composed: true,
+							detail: e.propagatedFrom
+						})
+					);
+
+					const {
+						feature: {
+							properties: { SOVEREIGNT: countryName, ADM0_A3_US: countryId }
+						}
+					} = e.propagatedFrom;
+
+					if (
+						this.highlight.find(country => {
+							return country === countryId || country === countryName;
+						})
+					) {
+						tt.setContent(countryName)
+							.setLatLng(e.propagatedFrom.getCenter())
+							.addTo(this.leafletMap);
+					}
+				},
+				mouseover: e => {
+					this.dispatchEvent(
+						new CustomEvent('mouseover-country', {
+							bubbles: true,
+							composed: true,
+							detail: e.propagatedFrom
+						})
+					);
+
+					const {
+						feature: {
+							properties: { SOVEREIGNT: countryName, ADM0_A3_US: countryId }
+						}
+					} = e.propagatedFrom;
+
+					if (
+						this.highlight.find(country => {
+							return country === countryId || country === countryName;
+						})
+					) {
+						tt.setContent(countryName)
+							.setLatLng(e.propagatedFrom.getCenter())
+							.addTo(this.leafletMap);
+					}
+				},
+				mouseout: e => {
+					this.dispatchEvent(
+						new CustomEvent('mouseout-country', {
+							bubbles: true,
+							composed: true,
+							detail: e.propagatedFrom
+						})
+					);
+					tt.removeFrom(this.leafletMap);
+				}
+			})
+			.addTo(this.leafletMap);
+
+		this.requestUpdate();
 	}
 
 	get mismatched() {
@@ -101,71 +184,21 @@ export class BasicWorldMap extends LitElement {
 
 	async firstUpdated() {
 		this.leafletMap.setView([0, 0], 2);
-
-		const tt = tooltip();
-		this.geoJson.on({
-			mouseover: e => {
-				this.dispatchEvent(
-					new CustomEvent('mouseover-country', {
-						bubbles: true,
-						composed: true,
-						detail: e.propagatedFrom
-					})
-				);
-
-				const {
-					feature: {
-						properties: { SOVEREIGNT: countryName, ADM0_A3_US: countryId }
-					}
-				} = e.propagatedFrom;
-
-				if (
-					this.highlight.find(country => {
-						return country === countryId || country === countryName;
-					})
-				) {
-					tt.setContent(countryName)
-						.setLatLng(e.propagatedFrom.getCenter())
-						.addTo(this.leafletMap);
-				}
-			},
-			mouseout: e => {
-				this.dispatchEvent(
-					new CustomEvent('mouseout-country', {
-						bubbles: true,
-						composed: true,
-						detail: e.propagatedFrom
-					})
-				);
-				tt.removeFrom(this.leafletMap);
-			},
-			click: e => {
-				this.dispatchEvent(
-					new CustomEvent('click-country', {
-						bubbles: true,
-						composed: true,
-						detail: e.propagatedFrom
-					})
-				);
-			}
-		});
 	}
 
 	protected updated(
 		_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
 	): void {
-		if (_changedProperties.has('highlight')) {
-			_changedProperties.get('highlight')?.forEach((country: string) => {
-				this.countryFeatures.get(country)?.setStyle({ fillColor: '#CFCDC9' });
-			});
-			if (this.highlight.length) {
-				const countriesFg = featureGroup(this.countries);
-				countriesFg.setStyle({ fillColor: '#0067B9' });
-				this.leafletMap.fitBounds(countriesFg.getBounds());
-			} else {
-				this.leafletMap.setView([0, 0], 2);
-			}
-			this.requestUpdate();
+		_changedProperties.get('highlight')?.forEach((country: string) => {
+			this.countryFeatures.get(country)?.setStyle({ fillColor: '#CFCDC9' });
+		});
+
+		if (this.highlight.length && this.countries.length) {
+			const countriesFg = featureGroup(this.countries);
+			countriesFg.setStyle({ fillColor: '#0067B9' });
+			this.leafletMap.fitBounds(countriesFg.getBounds());
+		} else {
+			this.leafletMap.setView([0, 0], 2);
 		}
 	}
 

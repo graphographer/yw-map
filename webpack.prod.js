@@ -8,10 +8,14 @@ const merged = mergeWithRules({
 	}
 })(common, {
 	mode: 'production',
+	entry: {
+		app: './src/app/index.ts',
+		BasicWorldMapBundled: './src/BasicWorldMapBundled.ts'
+	},
 	plugins: [
 		new HtmlWebpackPlugin({
 			title: 'Highlightable World Map',
-			template: 'src/index.html'
+			template: 'src/app/index.html'
 		})
 	],
 	devtool: 'source-map',

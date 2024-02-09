@@ -2,7 +2,6 @@ const path = require('path');
 
 module.exports = {
 	mode: 'production',
-	entry: { BasicWorldMap: './src/index.ts' },
 	resolve: {
 		// Add `.ts` and `.tsx` as a resolvable extension.
 		extensions: ['.ts', '.tsx', '.js', '.css'],
