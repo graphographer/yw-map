@@ -86,4 +86,14 @@ basicMap.highlight = [
 	'Uzbekistan'
 ];
 
+basicMap.style.visibility = 'hidden';
 document.body.replaceChildren(basicMap);
+
+setTimeout(() => {
+	basicMap.countryFeatures
+		.get('Western Sahara')
+		.getElement()
+		.classList.add('bwm-highlight');
+
+	basicMap.style.visibility = 'visible';
+}, 0);
