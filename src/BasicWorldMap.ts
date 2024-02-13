@@ -21,12 +21,25 @@ export class BasicWorldMap extends LitElement {
 				height: 500px;
 				width: auto;
 				margin-bottom: 20px;
+
+				--bwm-background: #f4f4f4;
+				--bwm-country: #cfcdc9;
+				--bwm-highlight: #0067b9;
 			}
+
 			.leaflet-container {
-				background-color: #f4f4f4;
+				background-color: var(--bwm-background);
 				font-family: 'Source Sans Pro', sans-serif;
 				font-size: 16px;
 				height: 100%;
+			}
+
+			.bwm-country {
+				fill: var(--bwm-country);
+			}
+
+			.bwm-highlight {
+				fill: var(--bwm-highlight);
 			}
 
 			.leaflet-attribution-flag {
@@ -92,11 +105,11 @@ export class BasicWorldMap extends LitElement {
 			style() {
 				return {
 					color: '#fff',
-					fillColor: '#CFCDC9',
+					// fillColor: '#CFCDC9',
 					fillOpacity: 1,
 					opacity: 0.5,
 					weight: 1,
-					className: 'map-countries'
+					className: 'bwm-country'
 				};
 			}
 		})
@@ -190,12 +203,18 @@ export class BasicWorldMap extends LitElement {
 		_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>
 	): void {
 		_changedProperties.get('highlight')?.forEach((country: string) => {
-			this.countryFeatures.get(country)?.setStyle({ fillColor: '#CFCDC9' });
+			this.countryFeatures
+				.get(country)
+				?.getElement()
+				.classList.remove('bwm-highlight');
 		});
 
 		if (this.highlight.length && this.countries.length) {
 			const countriesFg = featureGroup(this.countries);
-			countriesFg.setStyle({ fillColor: '#0067B9' });
+			// countriesFg.setStyle({ className: 'bwm-highlight' });
+			this.countries.forEach(feature => {
+				feature.getElement().classList.add('bwm-highlight');
+			});
 			this.leafletMap.fitBounds(countriesFg.getBounds());
 		} else {
 			this.leafletMap.setView([0, 0], 2);
@@ -207,8 +226,6 @@ export class BasicWorldMap extends LitElement {
 			?.map((country: string) => this.countryFeatures.get(country))
 			.filter(Boolean);
 	}
-
-	// get mismatchedCountries() {}
 
 	private onResize() {
 		if (!this.countries.length) return;
