@@ -10,7 +10,7 @@ const merged = mergeWithRules({
 	mode: 'production',
 	entry: {
 		app: './src/app/index.ts',
-		BasicWorldMapBundled: './src/BasicWorldMapBundled.ts'
+		index: './src/index.ts'
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
@@ -18,23 +18,30 @@ const merged = mergeWithRules({
 			template: 'src/app/index.html'
 		})
 	],
-	devtool: 'source-map',
 	module: {
 		rules: [
 			{
 				test: /\.(s?)css$/i,
 				use: [
-					{ loader: 'css-loader', options: { sourceMap: true } },
+					{ loader: 'css-loader' },
 					{
 						loader: 'postcss-loader',
 						options: {
-							sourceMap: true,
+							sourceMap: false,
 							postcssOptions: {
 								plugins: [
 									[
 										'cssnano',
 										{
-											preset: 'default'
+											preset: [
+												'default',
+												{
+													discardComments: {
+														removeAll: true
+													},
+													normalizeWhitespace: true
+												}
+											]
 										}
 									],
 									require('postcss-import'),
