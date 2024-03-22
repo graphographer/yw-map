@@ -195,7 +195,7 @@ export class BasicWorldMap extends LitElement {
 		);
 	}
 
-	async firstUpdated() {
+	firstUpdated() {
 		this.leafletMap.setView([0, 0], 2);
 	}
 

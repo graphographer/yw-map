@@ -9,15 +9,8 @@ const merged = mergeWithRules({
 })(common, {
 	mode: 'production',
 	entry: {
-		app: './src/app/index.ts',
-		index: './src/index.ts'
+		YWMap: './src/YWMap.ts'
 	},
-	plugins: [
-		new HtmlWebpackPlugin({
-			title: 'Highlightable World Map',
-			template: 'src/app/index.html'
-		})
-	],
 	module: {
 		rules: [
 			{
